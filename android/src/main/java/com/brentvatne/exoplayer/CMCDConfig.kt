@@ -9,15 +9,23 @@ import com.google.common.collect.ImmutableListMultimap
 class CMCDConfig(private val props: CMCDProps) {
     fun toCmcdConfigurationFactory(): CmcdConfiguration.Factory = CmcdConfiguration.Factory(::createCmcdConfiguration)
 
-    private fun createCmcdConfiguration(mediaItem: MediaItem): CmcdConfiguration =
-        CmcdConfiguration(
+    private fun createCmcdConfiguration(mediaItem: MediaItem): CmcdConfiguration {
+        // Ensure that props.mode is one of the allowed constants, else set to a default value
+        val mode = when (props.mode) {
+            CmcdConfiguration.MODE_REQUEST_HEADER -> CmcdConfiguration.MODE_REQUEST_HEADER
+            CmcdConfiguration.MODE_QUERY_PARAMETER -> CmcdConfiguration.MODE_QUERY_PARAMETER
+            else -> CmcdConfiguration.MODE_REQUEST_HEADER  // Default to a safe value
+        }
+
+        return CmcdConfiguration(
             java.util.UUID.randomUUID().toString(),
             mediaItem.mediaId,
             object : CmcdConfiguration.RequestConfig {
                 override fun getCustomData(): ImmutableListMultimap<String, String> = buildCustomData()
             },
-            intToCmcdMode(props.mode)
+            mode  // Use the validated mode here
         )
+    }
 
     private fun intToCmcdMode(mode: Int): Int =
         when (mode) {
